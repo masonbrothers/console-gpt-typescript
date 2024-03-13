@@ -19,10 +19,7 @@ console-gpt
 
 ### Usage
 ```
-Usage: console-gpt <command> [options]
-
-Commands:
-  console-gpt text  output in plaintext instead of markdown
+Usage: console-gpt [options]
 
 Options:
       --help     Show help                                             [boolean]
