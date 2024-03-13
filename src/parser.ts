@@ -25,3 +25,32 @@ export const argv = yargs(hideBin(process.argv))
       type: 'string' // Specify the type of the argument
     })
     .parse();
+
+const getModel = (argvValue: string) => {
+  if (argvValue === "3.5") {
+    return "gpt-3.5-turbo-0125"
+  } else if (argvValue === "4") {
+    return "gpt-4-turbo-preview"
+  }
+  throw new Error("Invalid model")
+}
+
+const getFormat = (argvValue: string) => {
+  if (argvValue === "text") {
+    return "text"
+  } else if (argvValue === "markdown") {
+    return "markdown"
+  }
+  throw new Error("Invalid format")
+}
+
+
+export const config = async () => {
+  const props = await argv
+
+  const model: 'gpt-4-turbo-preview' | 'gpt-3.5-turbo-0125' = getModel(props.model)
+  return {
+    useMarkdown: getFormat(props.format) === "markdown",
+    model, 
+  }
+}

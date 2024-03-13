@@ -7,6 +7,7 @@ import { marked } from 'marked';
 
 import { markedTerminal } from 'marked-terminal';
 import ora from 'ora';
+import { config } from './parser';
 
 if (typeof process.env.OPENAI_API_KEY !== "string" || process.env.OPENAI_API_KEY === "") {
     throw new Error("Please make sure that the OPENAI_API_KEY is set in the environment variables")
@@ -61,9 +62,9 @@ const getOpenAiCompletions = async (line: string, model: string) => {
 
 let lastLineCheck: string | undefined = undefined
 
-const completerBase = async (line: string) => {
+const completerBase = async (line: string, config: { model: string }) => {
   if (!lastLineCheck || line === "" || line === lastLineCheck) {
-    const guesses = await getOpenAiCompletions(line)
+    const guesses = await getOpenAiCompletions(line, config.model)
     suggestedCompletions.push(...guesses)
     const hits = suggestedCompletions.filter((c) => c.startsWith(line))
     lastLineCheck = line
@@ -113,7 +114,7 @@ const getText = (assistantMessage: string, useMarkdown: boolean) => {
   }
 }
 
-export function readFromTerminal(config: { useMarkdown: boolean, model: string }) {
+function readFromTerminal(config: { useMarkdown: boolean, model: string }) {
   rl.question('🙋 User: ', async (input) => {
     history.push({ role: "user", content: input })
 
@@ -148,3 +149,6 @@ export function readFromTerminal(config: { useMarkdown: boolean, model: string }
   });
 }
 
+export const start = async () => {
+  readFromTerminal(await config())
+}
