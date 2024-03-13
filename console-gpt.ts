@@ -5,7 +5,9 @@ import { OpenAI } from "openai"
 
 import { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources";
 import { marked } from 'marked';
+
 import { markedTerminal } from 'marked-terminal';
+import ora from 'ora';
 
 if (typeof process.env.OPENAI_API_KEY !== "string" || process.env.OPENAI_API_KEY === "") {
     throw new Error("Please make sure that the OPENAI_API_KEY is set in the environment variables")
@@ -36,42 +38,32 @@ export const chat = async (messages: ChatCompletionMessageParam[]) => {
 
 const history: ChatCompletionMessageParam[] = []
 
-let lastSemiCompleteAssistantMessage = ""
-
-const onAssistantWriting = (assistantMessage: string) => {
-  // Clear old assistant message
-  const lastMessageSize = lastSemiCompleteAssistantMessage.split("\n").length
-
-  if (lastMessageSize !== 0) {
-    process.stdout.write(`\x1B[${lastMessageSize}A`);
-  }
-
-  assistantMessage.split("\n").map((line) => {
-    process.stdout.write('\x1B[2K\r' + marked(line) + '\n');
-  })
-  lastSemiCompleteAssistantMessage = assistantMessage;
-}
+const ASSISTANT_PREFIX = "Assistant: "
 
 function readFromTerminal() {
-  rl.question('User: ', async (input) => {
+  rl.question('🙋 User: ', async (input) => {
     history.push({ role: "user", content: input })
 
     const stream = (await chat(history))
 
-    process.stdout.write('Assistant: ');
-
     let assistantMessage = ''
 
+    const spinner = ora({
+      text: ASSISTANT_PREFIX, 
+      discardStdin: false,
+      hideCursor: false, // Cntl+C will not stop the spinner unless this is set https://github.com/sindresorhus/ora/issues/156
+  }).start()
     for await (const chunk of stream) {
       const chunkContent = chunk.choices[0]?.delta?.content || ''
       // process.stdout.write(chunkContent);
       assistantMessage += chunkContent
-      onAssistantWriting(assistantMessage)
+      spinner.text = (ASSISTANT_PREFIX + marked(assistantMessage)).trim();
     }
+    spinner.stopAndPersist({
+      symbol: '🤖',
+      text: (ASSISTANT_PREFIX + marked(assistantMessage)).trim(),
+    })
 
-    lastSemiCompleteAssistantMessage = "";
-
-    process.stdout.write('\n');
     history.push({ role: "assistant", content: assistantMessage })
 
     readFromTerminal()
