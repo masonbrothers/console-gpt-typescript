@@ -1,9 +1,8 @@
-import 'dotenv/config'
 import { createInterface, CompleterResult } from 'readline';
 
 import { OpenAI } from "openai"
 
-import { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources";
+import { ChatCompletionMessageParam } from "openai/resources";
 import { marked } from 'marked';
 
 import { markedTerminal } from 'marked-terminal';
@@ -18,8 +17,6 @@ marked.use(markedTerminal())
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
-
-const model: 'gpt-4-turbo-preview' | 'gpt-3.5-turbo-0125' = 'gpt-4-turbo-preview'
 
 const getPromptCompletions = (line: string) => `
 Given the context of the conversation between the user and the assistant, make 5 guesses what you think the user's next prompt should be.
@@ -37,7 +34,7 @@ let lastTab: {
   line: string
 } | undefined = undefined
 
-const getOpenAiCompletions = async (line: string) => {
+const getOpenAiCompletions = async (line: string, model: string) => {
   const response = await openai.chat.completions.create({
     messages: [
       ...history,
@@ -92,7 +89,7 @@ const rl = createInterface({
   completer: completer
 });
 
-export const chat = async (messages: ChatCompletionMessageParam[]) => {
+const chat = async (messages: ChatCompletionMessageParam[], model: string) => {
   return await openai.chat.completions.create({
     messages: messages,
     model: model,
@@ -108,11 +105,19 @@ const history: ChatCompletionMessageParam[] = []
 
 const ASSISTANT_PREFIX = "Assistant: "
 
-function readFromTerminal() {
+const getText = (assistantMessage: string, useMarkdown: boolean) => {
+  if (useMarkdown) {
+    return (ASSISTANT_PREFIX + marked(assistantMessage)).trim()
+  } else {
+    return (ASSISTANT_PREFIX + assistantMessage).trim()
+  }
+}
+
+export function readFromTerminal(config: { useMarkdown: boolean, model: string }) {
   rl.question('🙋 User: ', async (input) => {
     history.push({ role: "user", content: input })
 
-    const stream = (await chat(history))
+    const stream = (await chat(history, config.model))
 
     let assistantMessage = ''
 
@@ -128,20 +133,18 @@ function readFromTerminal() {
       const chunkContent = chunk.choices[0]?.delta?.content || ''
       // process.stdout.write(chunkContent);
       assistantMessage += chunkContent
-      spinner.text = (ASSISTANT_PREFIX + marked(assistantMessage)).trim();
+      spinner.text = getText(assistantMessage, config.useMarkdown);
     }
     spinner.stopAndPersist({
       symbol: '🤖',
-      text: (ASSISTANT_PREFIX + marked(assistantMessage)).trim(),
+      text: getText(assistantMessage, config.useMarkdown),
     })
 
     history.push({ role: "assistant", content: assistantMessage })
     lastLineCheck = undefined
     suggestedCompletions = []
 
-    readFromTerminal()
+    readFromTerminal(config)
   });
 }
 
-console.log("Console ChatGPT")
-readFromTerminal()

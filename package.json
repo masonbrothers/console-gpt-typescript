@@ -1,8 +1,13 @@
 {
     "name": "console-gpt",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "",
+    "type": "module",
+    "license": "MIT",
     "main": "index.js",
+    "bin": {
+        "console-gpt": "src/index.ts"
+    },
     "scripts": {
         "start": "tsx src/console-gpt.ts"
     },
@@ -14,6 +19,10 @@
         "marked-terminal": "^7.0.0",
         "openai": "^4.28.4",
         "ora": "^8.0.1",
-        "tsx": "^4.7.1"
+        "tsx": "^4.7.1",
+        "yargs": "^17.7.2"
+    },
+    "devDependencies": {
+        "@types/yargs": "^17.0.32"
     }
 }
