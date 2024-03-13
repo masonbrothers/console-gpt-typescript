@@ -10,7 +10,9 @@
     "author": "",
     "dependencies": {
         "dotenv": "^16.4.5",
+        "marked-terminal": "^7.0.0",
         "openai": "^4.28.4",
+        "ora": "^8.0.1",
         "tsx": "^4.7.1"
     }
 }
