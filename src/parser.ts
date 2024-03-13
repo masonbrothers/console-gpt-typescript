@@ -2,8 +2,7 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 
 export const argv = yargs(hideBin(process.argv))
-  .usage('Usage: $0 <command> [options]')
-    .command('text', 'output in plaintext instead of markdown')
+  .usage('Usage: $0 [options]')
     .example('$0 -f markdown -m 4', 'Run with GPT-4 and output in markdown')
     .version('0.1.0')
     .option('format', {
